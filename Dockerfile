@@ -15,7 +15,7 @@ RUN apt-get update && \
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
-VOLUME ["/var/cache/nginx"]
+VOLUME ["/"]
 
 EXPOSE 80 443
 
