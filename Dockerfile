@@ -17,18 +17,6 @@ RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
 EXPOSE 80
 
-RUN npm install -g bower gulp
-
-WORKDIR /app
-
-COPY ./package.json /app/
-COPY ./bower.json /app/
-RUN npm install && bower install --allow-root
-
-COPY . /app/
-
-RUN gulp build 
-
 RUN cp -R /app/dist/*  /usr/share/nginx/html
 
 CMD ["nginx", "-g", "daemon off;"]
