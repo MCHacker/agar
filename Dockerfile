@@ -1,31 +1,22 @@
-# Dockerfile
+FROM debian:jessie
 
-FROM ubuntu_sshd_gcc_gerry:14.04
+MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-MAINTAINER gerry 20150126
+RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
+RUN echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> /etc/apt/sources.list
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV NGINX_VERSION 1.9.7-1~jessie
 
-RUN apt-get -yq install apache2 && rm -rf /var/lib/apt/lists/*
-RUN echo "Asia/Shanghai" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+RUN apt-get update && \
+    apt-get install -y ca-certificates nginx=${NGINX_VERSION} && \
+    rm -rf /var/lib/apt/lists/*
 
-ADD run.sh /run.sh
-RUN chmod 755 /*.sh
+# forward request and error logs to docker log collector
+RUN ln -sf /dev/stdout /var/log/nginx/access.log
+RUN ln -sf /dev/stderr /var/log/nginx/error.log
 
-RUN mkdir -p /var/lock/apache2 && mkdir -p /app && rm -rf /var/www/html && ln -s /app /var/www/html
-COPY sample/ /app
+VOLUME ["/var/cache/nginx"]
 
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
-ENV APACHE_LOG_DIR /var/log/apache2
-ENV APACHE_PID_FILE /var/run/apache2.pid
-ENV APACHE_RUN_DIR /var/run/apache2
-ENV APACHE_LOCK_DIR /var/lock/apache2
-ENV APACHE_SERVERADMIN admin@localhost
-ENV APACHE_SERVERNAME localhost
-ENV APACHE_SERVERALIAS docker.localhost
-ENV APACHE_DOCUMENTROOT /var/www
+EXPOSE 80 443
 
-EXPOSE 80
-WORKDIR /app
-CMD ["/run.sh"]
+CMD ["nginx", "-g", "daemon off;"]
