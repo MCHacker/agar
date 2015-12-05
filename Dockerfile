@@ -1,22 +1,31 @@
-FROM node:0.12.7-wheezy
+# Dockerfile
 
-MAINTAINER YeTing "me@yeting.info"
+FROM ubuntu_sshd_gcc_gerry:14.04
 
-RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62
-RUN echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> /etc/apt/sources.list
+MAINTAINER gerry 20150126
 
-ENV NGINX_VERSION 1.7.12-1~wheezy
+ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && \
-    apt-get install -y ca-certificates nginx && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get -yq install apache2 && rm -rf /var/lib/apt/lists/*
+RUN echo "Asia/Shanghai" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
 
-# forward request and error logs to docker log collector
-RUN ln -sf /dev/stdout /var/log/nginx/access.log
-RUN ln -sf /dev/stderr /var/log/nginx/error.log
+ADD run.sh /run.sh
+RUN chmod 755 /*.sh
+
+RUN mkdir -p /var/lock/apache2 && mkdir -p /app && rm -rf /var/www/html && ln -s /app /var/www/html
+COPY sample/ /app
+
+ENV APACHE_RUN_USER www-data
+ENV APACHE_RUN_GROUP www-data
+ENV APACHE_LOG_DIR /var/log/apache2
+ENV APACHE_PID_FILE /var/run/apache2.pid
+ENV APACHE_RUN_DIR /var/run/apache2
+ENV APACHE_LOCK_DIR /var/lock/apache2
+ENV APACHE_SERVERADMIN admin@localhost
+ENV APACHE_SERVERNAME localhost
+ENV APACHE_SERVERALIAS docker.localhost
+ENV APACHE_DOCUMENTROOT /var/www
 
 EXPOSE 80
-
-RUN cp -R /app/dist/*  /usr/share/nginx/html
-
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+CMD ["/run.sh"]
